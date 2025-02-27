@@ -30,6 +30,7 @@
           packages = with pkgs; [
             go_1_22 # The Go CLI
             gotools # Go tools like goimports, godoc, and others
+            sqlc
           ];
         };
       });
