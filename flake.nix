@@ -11,10 +11,10 @@
     let
       # Systems supported
       allSystems = [
-        "x86_64-linux" # 64-bit Intel/AMD Linux
-        "aarch64-linux" # 64-bit ARM Linux
-        "x86_64-darwin" # 64-bit Intel macOS
-        "aarch64-darwin" # 64-bit ARM macOS
+        "x86_64-linux"   # 64-bit Intel/AMD Linux
+        "aarch64-linux"  # 64-bit ARM Linux
+        "x86_64-darwin"  # 64-bit Intel macOS
+        "aarch64-darwin" # 64-bit ARM macOS (Apple Silicon)
       ];
 
       # Helper to provide system-specific attributes
@@ -28,10 +28,13 @@
         default = pkgs.mkShell {
           # The Nix packages provided in the environment
           packages = with pkgs; [
-            go_1_22 # The Go CLI
-            gotools # Go tools like goimports, godoc, and others
-            sqlc
-          ];
+            go_1_22   # The Go CLI
+            gotools   # Go tools like goimports, godoc, and others
+            sqlc      # SQL code generator
+
+            # OS-specific tools
+          ] ++ (if pkgs.stdenv.isLinux then [ inotify-tools ] else [])
+            ++ (if pkgs.stdenv.isDarwin then [ fswatch ] else []);
         };
       });
     };
