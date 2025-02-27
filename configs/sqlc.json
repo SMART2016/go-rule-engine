@@ -3,9 +3,9 @@
   "packages": [
     {
       "name": "sqlc",
-      "path": "store",
-      "queries": "store/sqlc/store.sql",
-      "schema": "store/sqlc/store_schema.sql",
+      "path": "../store",
+      "queries": "../store/sqlc/store.sql",
+      "schema": "../store/sqlc/store_schema.sql",
       "engine": "postgresql",
       "emit_json_tags": true,
       "emit_prepared_queries": false,
