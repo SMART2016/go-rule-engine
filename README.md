@@ -11,3 +11,8 @@ An Extensible go rule engine written on top of grule
   - `source ~/.zshrc`
 - Navigte to the current project and run below command to enable direnv
   - `direnv allow`
+
+## To generate the store code to fetch , save and remove processed events with sqlc
+- `sqlc generate`
+  - This will generate all code in `store` package from the schema and store sql file.
+- 
