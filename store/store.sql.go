@@ -3,14 +3,22 @@
 //   sqlc v1.26.0
 // source: store.sql
 
-package sqlc
+package store
 
 import (
 	"context"
 )
 
 const cleanupOldEvents = `-- name: CleanupOldEvents :exec
-DELETE FROM processed_events WHERE occurred_at < NOW() - INTERVAL '1 hour' * $1
+WITH rows_to_delete AS (
+    SELECT tenant_id
+    FROM processed_events
+    WHERE occurred_at < NOW() - INTERVAL '1 hour' * $1
+    LIMIT 10000
+    )
+DELETE FROM processed_events
+    USING rows_to_delete
+WHERE processed_events.ctid = rows_to_delete.ctid
 `
 
 func (q *Queries) CleanupOldEvents(ctx context.Context, dollar_1 interface{}) error {
@@ -19,36 +27,46 @@ func (q *Queries) CleanupOldEvents(ctx context.Context, dollar_1 interface{}) er
 }
 
 const isDuplicate = `-- name: IsDuplicate :one
-SELECT COUNT(*) FROM processed_events
-WHERE tenant_id = $1
-  AND event_type = $2
-  AND occurred_at >= NOW() - INTERVAL '1 hour' * $3
+SELECT EXISTS (
+    SELECT 1 FROM processed_events
+    WHERE tenant_id = $1
+      AND event_type = $2
+      AND event_sha = $3
+      AND occurred_at >= NOW() - INTERVAL '1 hour' * $4
+)
 `
 
 type IsDuplicateParams struct {
 	TenantID  string      `json:"tenant_id"`
 	EventType string      `json:"event_type"`
-	Column3   interface{} `json:"column_3"`
+	EventSha  string      `json:"event_sha"`
+	Column4   interface{} `json:"column_4"`
 }
 
-func (q *Queries) IsDuplicate(ctx context.Context, arg IsDuplicateParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, isDuplicate, arg.TenantID, arg.EventType, arg.Column3)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
+func (q *Queries) IsDuplicate(ctx context.Context, arg IsDuplicateParams) (bool, error) {
+	row := q.db.QueryRowContext(ctx, isDuplicate,
+		arg.TenantID,
+		arg.EventType,
+		arg.EventSha,
+		arg.Column4,
+	)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
 }
 
 const saveEvent = `-- name: SaveEvent :exec
-INSERT INTO processed_events (tenant_id, event_type, occurred_at)
-VALUES ($1, $2, NOW())
+INSERT INTO processed_events (tenant_id, event_type, event_sha, occurred_at)
+VALUES ($1, $2, $3, NOW())
 `
 
 type SaveEventParams struct {
 	TenantID  string `json:"tenant_id"`
 	EventType string `json:"event_type"`
+	EventSha  string `json:"event_sha"`
 }
 
 func (q *Queries) SaveEvent(ctx context.Context, arg SaveEventParams) error {
-	_, err := q.db.ExecContext(ctx, saveEvent, arg.TenantID, arg.EventType)
+	_, err := q.db.ExecContext(ctx, saveEvent, arg.TenantID, arg.EventType, arg.EventSha)
 	return err
 }

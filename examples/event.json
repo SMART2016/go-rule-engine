@@ -1,0 +1,9 @@
+{
+  "payload": {
+    "usage_percentage" : 80,
+    "instance_id": "abcd",
+    "disk_size_in_bytes" : 2048
+  },
+  "tenant_id": "12345A",
+  "type": "disk_space"
+}

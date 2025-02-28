@@ -2,7 +2,7 @@
   "version": "1",
   "packages": [
     {
-      "name": "sqlc",
+      "name": "store",
       "path": "../store",
       "queries": "../store/sqlc/store.sql",
       "schema": "../store/sqlc/store_schema.sql",

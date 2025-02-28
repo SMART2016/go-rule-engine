@@ -1,9 +1,10 @@
-package go_rule_engine
+package rule_processor
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	"os"
 	"time"
 )
@@ -49,19 +50,22 @@ func NewFrameworkConfig(opts ...FrameworkConfigOption) (*FrameworkConfig, error)
 	}
 
 	// Load configurations from provided paths
-	if err := cfg.LoadConfigs(); err != nil {
+	if err := cfg.Load(); err != nil {
 		return nil, err
 	}
 
 	return cfg, nil
 }
 
-func (cfg *FrameworkConfig) LoadConfigs() error {
+func (cfg *FrameworkConfig) Load() error {
+	//Load DB config from the provided path by the consumer.
 	if err := cfg.LoadDBConfig(); err != nil {
 		return errors.New(fmt.Sprint("load db config failed, Error : %v", err))
 	}
-	if err := cfg.LoadRules(); err != nil {
-		return errors.New(fmt.Sprint("loading Rules failed, Error : %v", err))
+
+	//Initialize a Rule repository instance and load the rules to the repository
+	if _, err := initializeSingleRuleRepoInstance(cfg); err != nil {
+		return errors.New(fmt.Sprint("Initializing Rules Repository failed, Error : %v", err))
 	}
 	return nil
 }
@@ -78,20 +82,5 @@ func (cfg *FrameworkConfig) LoadDBConfig() error {
 		return err
 	}
 	cfg.dbConfig = &dbConfig
-	return nil
-}
-
-// LoadRules loads the rules from a JSON file.
-func (cfg *FrameworkConfig) LoadRules() error {
-	file, err := os.ReadFile(cfg.RuleRepoPath)
-	if err != nil {
-		return err
-	}
-	var rules map[string]map[string][]Rule
-	err = json.Unmarshal(file, &rules)
-	if err != nil {
-		return err
-	}
-	cfg.rules = rules
 	return nil
 }

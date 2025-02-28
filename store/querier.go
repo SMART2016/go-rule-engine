@@ -2,7 +2,7 @@
 // versions:
 //   sqlc v1.26.0
 
-package sqlc
+package store
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 
 type Querier interface {
 	CleanupOldEvents(ctx context.Context, dollar_1 interface{}) error
-	IsDuplicate(ctx context.Context, arg IsDuplicateParams) (int64, error)
+	IsDuplicate(ctx context.Context, arg IsDuplicateParams) (bool, error)
 	SaveEvent(ctx context.Context, arg SaveEventParams) error
 }
 

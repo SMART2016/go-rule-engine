@@ -1,6 +1,8 @@
-package go_rule_engine
+package rule_processor
 
-import "time"
+import (
+	"time"
+)
 
 // Option defines a function signature for setting configurations.
 type FrameworkConfigOption func(*FrameworkConfig)

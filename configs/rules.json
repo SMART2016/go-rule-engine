@@ -4,7 +4,7 @@
         "name": "Disk Space 80% Alert",
         "event_type": "disk_space",
         "condition": "Event.Payload.Usage >= 80",
-        "action": "SendEmail()",
+        "action": "Event.ShouldHandle = true",
         "send_email": true,
         "deduplication": true,
         "dedup_window": 3
@@ -13,7 +13,7 @@
       "name": "Disk Space 90% Alert",
       "event_type": "disk_space",
       "condition": "Event.Payload.Usage >= 90",
-      "action": "SendEmail()",
+      "action": "Event.ShouldHandle = true",
       "send_email": true,
       "deduplication": true,
       "dedup_window": 3
