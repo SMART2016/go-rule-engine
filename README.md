@@ -18,7 +18,8 @@ An Extensible go rule engine written on top of grule
 
 ## Startup a local Postgres instance on docker
 - Run below command from /go-rule-engine folder directly
-- `docker run --hostname=3482db53b646 \
+```
+  docker run --hostname=3482db53b646 \
   --name=postgres \
   --env PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/lib/postgresql/17/bin \
   --env GOSU_VERSION=1.17 \
@@ -37,5 +38,10 @@ An Extensible go rule engine written on top of grule
   --restart=no \
   --runtime=runc \
   -d postgres:latest
-`
+```
 
+## TODO's
+- Handle concurrency issue on state store 
+  - Check if write fails how we can handle same using message bus commits
+- How to handle event schema which would be needed for rule evaluation , 
+     currently how does grule handles that.
