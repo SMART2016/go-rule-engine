@@ -1,0 +1,22 @@
+{
+  "tenant_1": {
+      "disk_space_80_percent":{
+        "name": "Disk Space 80% Alert",
+        "event_type": "disk_space",
+        "condition": "Event.Payload.Usage >= 80",
+        "action": "SendEmail()",
+        "send_email": true,
+        "deduplication": true,
+        "dedup_window": 3
+      },
+      "disk_space_90_percent":{
+      "name": "Disk Space 90% Alert",
+      "event_type": "disk_space",
+      "condition": "Event.Payload.Usage >= 90",
+      "action": "SendEmail()",
+      "send_email": true,
+      "deduplication": true,
+      "dedup_window": 3
+      }
+  }
+}
