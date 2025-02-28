@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS processed_events (
                                                 tenant_id VARCHAR(255) NOT NULL,
                                                 event_type VARCHAR(255) NOT NULL,
                                                 event_sha VARCHAR(255) NOT NULL,
+                                                event_details json,
                                                 Created_at TIMESTAMP DEFAULT NOW()
 );
 
