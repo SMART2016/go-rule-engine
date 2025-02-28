@@ -3,8 +3,6 @@ package rule_processor
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
-
 	"os"
 	"time"
 )
@@ -60,12 +58,12 @@ func NewFrameworkConfig(opts ...FrameworkConfigOption) (*FrameworkConfig, error)
 func (cfg *FrameworkConfig) Load() error {
 	//Load DB config from the provided path by the consumer.
 	if err := cfg.LoadDBConfig(); err != nil {
-		return errors.New(fmt.Sprint("load db config failed, Error : %v", err))
+		return errors.New("load db config failed, Error : " + err.Error())
 	}
 
 	//Initialize a Rule repository instance and load the rules to the repository
 	if _, err := initializeSingleRuleRepoInstance(cfg); err != nil {
-		return errors.New(fmt.Sprint("Initializing Rules Repository failed, Error : %v", err))
+		return errors.New("Initializing Rules Repository failed, Error : " + err.Error())
 	}
 	return nil
 }
