@@ -1,4 +1,5 @@
 flake-*
 go.sum
+*.txt
 .idea/
 pgdata/
