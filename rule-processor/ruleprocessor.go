@@ -27,6 +27,10 @@ func NewRuleProcessor[T any](cfg *Config, ruleRepo RuleRepository, eventStore st
 }
 
 func (re *GRuleProcessor[T]) Evaluate(ctx context.Context, event models.Event[T]) (bool, error) {
+	err := event.Validate()
+	if err != nil {
+		return false, err
+	}
 	rules, err := re.ruleRepo.GetRules(event.TenantID, event.Type)
 	if err != nil {
 		return false, nil // No rules found for this tenant and event type
