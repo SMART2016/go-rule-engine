@@ -38,22 +38,22 @@ repository and event store.
 The function returns the EventProcessor instance and an error if any of the initialization steps fail.
 */
 func NewProcessor[T any](cfg Config) (*EventProcessor[T], error) {
-	//Initialize Rule Repository
+	// Initialize Rule Repository
 	ruleRepo, err := initializeSingleRuleRepoInstance(cfg)
 	if err != nil {
 		return nil, errors.New("Failed to Initialize Rule Repository: " + err.Error())
 	}
 
-	//Generate DSN dsn := "host=localhost port=5432 user=username password=password dbname=mydb sslmode=disable"
+	// Generate DSN
 	dsn := cfg.DbConfig().GenerateDSN()
 
-	//Initialize Event Store
+	// Initialize Event Store
 	eventStore, err := store.InitializeEventStateStore(dsn)
 	if err != nil {
 		return nil, errors.New("Failed to Initialize Event State Store: " + err.Error())
 	}
 
-	//TODO: Pass the Type as T
+	// Create a new EventProcessor instance with a GRuleProcessor instance
 	return &EventProcessor[T]{
 		ruleProc: &GRuleProcessor[T]{
 			ruleRepo:   ruleRepo,
@@ -65,14 +65,18 @@ func NewProcessor[T any](cfg Config) (*EventProcessor[T], error) {
 /*
 ProcessEvent evaluates the event against the configured rules.
 
-It takes a context.Context and a models.Event[T] as an argument.
-The context.Context is used to pass a context to the rule engine.
-The models.Event[T] is the event to be evaluated.
+Parameters:
+  - ctx: context.Context - Used to pass a context to the rule engine.
+  - event: models.Event[T] - The event to be evaluated.
 
-It returns a boolean indicating whether the event should be handled and an error.
-If the event should be handled, the boolean is true and the error is nil.
-If the event should not be handled, the boolean is false and the error is nil.
-If an error occurs, the boolean is false and the error is not nil.
+Returns:
+  - bool: Indicates whether the event should be handled.
+  - error: Error if any occurs during evaluation.
+
+The function evaluates the event using the rule engine associated with the EventProcessor.
+If the event should be handled, it returns true and nil error.
+If the event should not be handled, it returns false and nil error.
+If an error occurs during evaluation, it returns false and the error.
 */
 func (ep *EventProcessor[T]) ProcessEvent(ctx context.Context, event models.Event[T]) (bool, error) {
 	// Evaluate the event using the rule engine
