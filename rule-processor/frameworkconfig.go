@@ -3,6 +3,7 @@ package rule_processor
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"time"
 )
@@ -17,6 +18,14 @@ type DBConfig struct {
 	SSLMode  string `json:"sslmode"`
 }
 
+// GenerateDSN constructs a PostgreSQL DSN from DBConfig
+func (cfg *DBConfig) GenerateDSN() string {
+	return fmt.Sprintf(
+		"postgresql://%s:%s@%s:%d/%s?sslmode=%s",
+		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Database, cfg.SSLMode,
+	)
+}
+
 // FrameworkConfig holds all configuration for the rule engine.
 type FrameworkConfig struct {
 	DBConfigPath    string
@@ -24,17 +33,6 @@ type FrameworkConfig struct {
 	CleanupInterval time.Duration
 	dbConfig        *DBConfig
 	rules           map[string]map[string][]Rule
-}
-
-// Rule represents a single rule in the rule repository.
-type Rule struct {
-	Name          string        `json:"name"`
-	EventType     string        `json:"event_type"`
-	Condition     string        `json:"condition"`
-	Action        string        `json:"action"`
-	SendEmail     bool          `json:"send_email"`
-	Deduplication bool          `json:"deduplication"`
-	DedupWindow   time.Duration `json:"dedup_window"`
 }
 
 // NewFrameworkConfig initializes a new configuration with functional options.
@@ -53,6 +51,33 @@ func NewFrameworkConfig(opts ...FrameworkConfigOption) (*FrameworkConfig, error)
 	}
 
 	return cfg, nil
+}
+
+func (cfg *FrameworkConfig) GetDBConfigPath() string {
+	return cfg.DBConfigPath
+}
+
+func (cfg *FrameworkConfig) GetRuleRepoPath() string {
+	return cfg.RuleRepoPath
+}
+
+func (cfg *FrameworkConfig) GetCleanupInterval() time.Duration {
+	return cfg.CleanupInterval
+}
+
+func (cfg *FrameworkConfig) DbConfig() *DBConfig {
+	return cfg.dbConfig
+}
+
+// Rule represents a single rule in the rule repository.
+type Rule struct {
+	Name          string        `json:"name"`
+	EventType     string        `json:"event_type"`
+	Condition     string        `json:"condition"`
+	Action        string        `json:"action"`
+	SendEmail     bool          `json:"send_email"`
+	Deduplication bool          `json:"deduplication"`
+	DedupWindow   time.Duration `json:"dedup_window"`
 }
 
 func (cfg *FrameworkConfig) Load() error {

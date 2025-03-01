@@ -31,10 +31,9 @@ An Extensible go rule engine written on top of grule
   --env POSTGRES_USER=dbuser \
   --env POSTGRES_DB=rule_engine \
   --volume $(pwd)/store/sqlc/store_schema.sql:/docker-entrypoint-initdb.d/store_schema.sql \
-  --volume "$(pwd)/scripts/init.sh:/docker-entrypoint-initdb.d/init.sh" \
   --volume $(pwd)/pgdata:/var/lib/postgresql/data \
   --network bridge \
-  -p 5432:5432 \
+  -p 5433:5432 \
   --restart=no \
   --runtime=runc \
   -d postgres:latest

@@ -8,7 +8,7 @@ import (
 
 // RuleRepository provides access to rules.
 type singletonJsonRuleRepository struct {
-	cfg   *FrameworkConfig
+	cfg   Config
 	rules map[string]map[string][]Rule
 	mu    sync.RWMutex
 }
@@ -19,10 +19,10 @@ var (
 )
 
 // GetInstance returns the singleton instance of Singleton
-func initializeSingleRuleRepoInstance(frameWrkCfg *FrameworkConfig) (*singletonJsonRuleRepository, error) {
+func initializeSingleRuleRepoInstance(frameWrkCfg Config) (*singletonJsonRuleRepository, error) {
 	var instantiationErr error = nil
 	once.Do(func() {
-		file, err := os.ReadFile(frameWrkCfg.RuleRepoPath)
+		file, err := os.ReadFile(frameWrkCfg.GetRuleRepoPath())
 		if err != nil {
 			instantiationErr = err
 			return

@@ -14,12 +14,19 @@ type RuleRepository interface {
 	GetRules(tenantID, eventType string) ([]Rule, error)
 }
 
-type RuleProcessor[T any] struct {
+type GRuleProcessor[T any] struct {
 	ruleRepo   RuleRepository
 	eventStore store.Querier
 }
 
-func (re *RuleProcessor[T]) Evaluate(ctx context.Context, event models.Event[T]) (bool, error) {
+func NewRuleProcessor[T any](cfg *Config, ruleRepo RuleRepository, eventStore store.Querier) *GRuleProcessor[T] {
+	return &GRuleProcessor[T]{
+		ruleRepo:   ruleRepo,
+		eventStore: eventStore,
+	}
+}
+
+func (re *GRuleProcessor[T]) Evaluate(ctx context.Context, event models.Event[T]) (bool, error) {
 	rules, err := re.ruleRepo.GetRules(event.TenantID, event.Type)
 	if err != nil {
 		return false, nil // No rules found for this tenant and event type
@@ -91,11 +98,4 @@ rule ` + rule.Name + ` {
 	}
 
 	return false, nil
-}
-
-func NewRuleProcessor[T any](ruleRepo RuleRepository, eventStore store.Querier) *RuleProcessor[T] {
-	return &RuleProcessor[T]{
-		ruleRepo:   ruleRepo,
-		eventStore: eventStore,
-	}
 }
