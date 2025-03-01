@@ -10,7 +10,7 @@ type FrameworkConfigOption func(*FrameworkConfig)
 // WithDBConfigPath sets the path to the database configuration file.
 func WithDBConfigPath(path string) FrameworkConfigOption {
 	return func(cfg *FrameworkConfig) {
-		cfg.DBConfigPath = path
+		cfg.EventStoreConfigPath = path
 	}
 }
 

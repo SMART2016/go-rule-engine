@@ -12,7 +12,7 @@ type Config interface {
 	GetDBConfigPath() string
 	GetRuleRepoPath() string
 	GetCleanupInterval() time.Duration
-	DbConfig() *DBConfig
+	DbConfig() *EventStateStoreConfig
 }
 
 type RuleProcessor[T any] interface {
@@ -23,7 +23,14 @@ type EventProcessor[T any] struct {
 	ruleProc RuleProcessor[T]
 }
 
-func NewEventProcessor[T any](cfg Config) (*EventProcessor[T], error) {
+/*
+*
+This is the Main interface for the framework which will be called and cosumed from outside
+- Consumer Instantiates a config Object
+- Creates a New Event Processor Instance
+- Called EventProcessor.ProcessEvent(ctx context.Context, event models.Event[T]) (bool, error)
+*/
+func NewProcessor[T any](cfg Config) (*EventProcessor[T], error) {
 	//Initialize Rule Repository
 	ruleRepo, err := initializeSingleRuleRepoInstance(cfg)
 	if err != nil {

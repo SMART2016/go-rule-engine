@@ -1,3 +1,10 @@
+/*
+*
+Users will create the configuration and pass it to the event processor for evaluating the event against the configured rules.
+This module provides configuration management for a rule processing framework. It includes event state store configurations details,
+rule repository management,and configurable cleanup intervals. The configuration is loaded dynamically from files
+provided by the user.
+*/
 package rule_processor
 
 import (
@@ -8,8 +15,8 @@ import (
 	"time"
 )
 
-// DBConfig holds database connection details for the State Store.
-type DBConfig struct {
+// EventStateStoreConfig holds database connection details for the State Store.
+type EventStateStoreConfig struct {
 	Host     string `json:"host"`
 	Port     int    `json:"port"`
 	User     string `json:"user"`
@@ -18,8 +25,8 @@ type DBConfig struct {
 	SSLMode  string `json:"sslmode"`
 }
 
-// GenerateDSN constructs a PostgreSQL DSN from DBConfig
-func (cfg *DBConfig) GenerateDSN() string {
+// GenerateDSN constructs a PostgreSQL DSN from EventStateStoreConfig
+func (cfg *EventStateStoreConfig) GenerateDSN() string {
 	return fmt.Sprintf(
 		"postgresql://%s:%s@%s:%d/%s?sslmode=%s",
 		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Database, cfg.SSLMode,
@@ -28,11 +35,11 @@ func (cfg *DBConfig) GenerateDSN() string {
 
 // FrameworkConfig holds all configuration for the rule engine.
 type FrameworkConfig struct {
-	DBConfigPath    string
-	RuleRepoPath    string
-	CleanupInterval time.Duration
-	dbConfig        *DBConfig
-	rules           map[string]map[string][]Rule
+	EventStoreConfigPath string
+	RuleRepoPath         string
+	CleanupInterval      time.Duration
+	eventStoreConfig     *EventStateStoreConfig
+	rules                map[string]map[string][]Rule
 }
 
 // NewFrameworkConfig initializes a new configuration with functional options.
@@ -54,7 +61,7 @@ func NewFrameworkConfig(opts ...FrameworkConfigOption) (*FrameworkConfig, error)
 }
 
 func (cfg *FrameworkConfig) GetDBConfigPath() string {
-	return cfg.DBConfigPath
+	return cfg.EventStoreConfigPath
 }
 
 func (cfg *FrameworkConfig) GetRuleRepoPath() string {
@@ -65,8 +72,8 @@ func (cfg *FrameworkConfig) GetCleanupInterval() time.Duration {
 	return cfg.CleanupInterval
 }
 
-func (cfg *FrameworkConfig) DbConfig() *DBConfig {
-	return cfg.dbConfig
+func (cfg *FrameworkConfig) DbConfig() *EventStateStoreConfig {
+	return cfg.eventStoreConfig
 }
 
 // Rule represents a single rule in the rule repository.
@@ -95,15 +102,15 @@ func (cfg *FrameworkConfig) Load() error {
 
 // LoadDBConfig loads the database configuration from a JSON file.
 func (cfg *FrameworkConfig) LoadDBConfig() error {
-	file, err := os.ReadFile(cfg.DBConfigPath)
+	file, err := os.ReadFile(cfg.EventStoreConfigPath)
 	if err != nil {
 		return err
 	}
-	var dbConfig DBConfig
+	var dbConfig EventStateStoreConfig
 	err = json.Unmarshal(file, &dbConfig)
 	if err != nil {
 		return err
 	}
-	cfg.dbConfig = &dbConfig
+	cfg.eventStoreConfig = &dbConfig
 	return nil
 }
