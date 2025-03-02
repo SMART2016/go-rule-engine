@@ -25,7 +25,15 @@ type EventStateStoreConfig struct {
 	SSLMode  string `json:"sslmode"`
 }
 
-// GenerateDSN constructs a PostgreSQL DSN from EventStateStoreConfig
+/*
+GenerateDSN constructs a PostgreSQL DSN from EventStateStoreConfig
+
+The generated DSN is in the format:
+
+	postgresql://user:password@host:port/database?sslmode=sslmode
+
+This DSN can be used to establish a connection to PostgreSQL.
+*/
 func (cfg *EventStateStoreConfig) GenerateDSN() string {
 	return fmt.Sprintf(
 		"postgresql://%s:%s@%s:%d/%s?sslmode=%s",
