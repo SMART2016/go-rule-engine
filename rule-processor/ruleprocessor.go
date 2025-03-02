@@ -3,6 +3,7 @@ package rule_processor
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/SMART2016/go-rule-engine/models"
 	"github.com/SMART2016/go-rule-engine/store"
 	"github.com/hyperjumptech/grule-rule-engine/ast"
@@ -79,14 +80,13 @@ func (re *GRuleProcessor) Evaluate(ctx context.Context, event models.BaseEvent[a
 		ruleBuilder := builder.NewRuleBuilder(knowledgeLibrary)
 
 		// Build the rule into the KnowledgeBase
-		grl := `
-rule ` + rule.Name + ` {
-    when
-        ` + rule.Condition + `
-    then
-        ` + rule.Action + `
-}
-`
+		grl := fmt.Sprintf(`
+			rule %s {
+				when
+					%s
+				then
+					%s;
+			}`, rule.Name, rule.Condition, rule.Action)
 		resource := pkg.NewBytesResource([]byte(grl))
 		err := ruleBuilder.BuildRuleFromResource("EventRules", "0.0.1", resource)
 		if err != nil {
