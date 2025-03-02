@@ -40,7 +40,13 @@ type BaseEvent[T any] struct {
 
 func (e *BaseEvent[T]) Evaluate(ctx context.Context, processor RuleProcessor) (bool, error) {
 	//TODO implement me
-	panic("implement me")
+	return processor.Evaluate(ctx, BaseEvent[any]{
+		TenantID:     e.TenantID,
+		Type:         e.Type,
+		Payload:      e.Payload, // Convert to `any`
+		ShouldHandle: e.ShouldHandle,
+		EventSHA:     e.EventSHA,
+	})
 }
 
 // Validate checks required fields
