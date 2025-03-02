@@ -16,7 +16,7 @@ func main() {
 	processor, err := ruleprocessor.NewGRuleProcessor(nil)
 
 	// Initialize event registry
-	registry := ruleprocessor.getEventRegistry()
+	registry := ruleprocessor.GetEventRegistry()
 	// Step 1: Register event types (only once at startup)
 	registry.RegisterEventType("disk_usage", func() models.Evaluable {
 		return &models.BaseEvent[any]{

@@ -18,7 +18,7 @@ var registry = &EventRegistry{
 	eventConstructors: make(map[string]func() models.Evaluable),
 }
 
-func getEventRegistry() *EventRegistry {
+func GetEventRegistry() *EventRegistry {
 	return registry
 }
 
