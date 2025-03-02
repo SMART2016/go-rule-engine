@@ -86,7 +86,8 @@ func (re *GRuleProcessor) Evaluate(ctx context.Context, event models.BaseEvent[a
 					%s
 				then
 					%s;
-			}`, rule.Name, rule.Condition, rule.Action)
+			}
+`, rule.Name, rule.Condition, rule.Action)
 		resource := pkg.NewBytesResource([]byte(grl))
 		err := ruleBuilder.BuildRuleFromResource("EventRules", "0.0.1", resource)
 		if err != nil {

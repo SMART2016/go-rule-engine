@@ -39,7 +39,6 @@ type BaseEvent[T any] struct {
 }
 
 func (e *BaseEvent[T]) Evaluate(ctx context.Context, processor RuleProcessor) (bool, error) {
-	//TODO implement me
 	return processor.Evaluate(ctx, BaseEvent[any]{
 		TenantID:     e.TenantID,
 		Type:         e.Type,

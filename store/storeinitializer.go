@@ -3,9 +3,6 @@ package store
 import "log"
 
 func InitializeEventStateStore(dsn string) (Querier, error) {
-	// Database connection string (replace with actual credentials)
-	//TODO: fetch details from config to generate DSN
-
 	// Initialize database
 	database, err := NewDatabase(dsn)
 	if err != nil {
