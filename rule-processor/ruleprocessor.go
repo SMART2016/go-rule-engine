@@ -2,31 +2,67 @@ package rule_processor
 
 import (
 	"context"
+	"errors"
 	"github.com/SMART2016/go-rule-engine/models"
 	"github.com/SMART2016/go-rule-engine/store"
 	"github.com/hyperjumptech/grule-rule-engine/ast"
 	"github.com/hyperjumptech/grule-rule-engine/builder"
 	"github.com/hyperjumptech/grule-rule-engine/engine"
 	"github.com/hyperjumptech/grule-rule-engine/pkg"
+	"time"
 )
 
 type RuleRepository interface {
 	GetRules(tenantID, eventType string) ([]Rule, error)
 }
 
-type GRuleProcessor[T any] struct {
+type Config interface {
+	GetDBConfigPath() string
+	GetRuleRepoPath() string
+	GetCleanupInterval() time.Duration
+	DbConfig() *EventStateStoreConfig
+}
+
+type GRuleProcessor struct {
+	conf       *Config
 	ruleRepo   RuleRepository
 	eventStore store.Querier
 }
 
-func NewRuleProcessor[T any](cfg *Config, ruleRepo RuleRepository, eventStore store.Querier) *GRuleProcessor[T] {
-	return &GRuleProcessor[T]{
+/*
+NewGRuleProcessor initializes a new instance of GRuleProcessor.
+
+Parameters:
+  - cfg: *Config - The configuration settings for the rule processor.
+  - ruleRepo: RuleRepository - Interface to access the rule repository.
+  - eventStore: store.Querier - Interface to interact with the event store.
+
+Returns:
+  - *GRuleProcessor: A pointer to the initialized GRuleProcessor instance.
+*/
+func NewGRuleProcessor(cfg Config) (*GRuleProcessor, error) {
+	// Initialize Rule Repository
+	ruleRepo, err := initializeSingleRuleRepoInstance(cfg)
+	if err != nil {
+		return nil, errors.New("Failed to Initialize Rule Repository: " + err.Error())
+	}
+
+	// Generate DSN
+	dsn := cfg.DbConfig().GenerateDSN()
+
+	// Initialize BaseEvent Store
+	eventStore, err := store.InitializeEventStateStore(dsn)
+	if err != nil {
+		return nil, errors.New("Failed to Initialize BaseEvent State Store: " + err.Error())
+	}
+	return &GRuleProcessor{
+		conf:       &cfg,
 		ruleRepo:   ruleRepo,
 		eventStore: eventStore,
-	}
+	}, nil
 }
 
-func (re *GRuleProcessor[T]) Evaluate(ctx context.Context, event models.Event[T]) (bool, error) {
+func (re *GRuleProcessor) Evaluate(ctx context.Context, event models.BaseEvent[any]) (bool, error) {
 	err := event.Validate()
 	if err != nil {
 		return false, err
@@ -74,7 +110,7 @@ rule ` + rule.Name + ` {
 
 		// Create a new DataContext and add the event
 		dataContext := ast.NewDataContext()
-		err = dataContext.Add("Event", &event)
+		err = dataContext.Add("BaseEvent", &event)
 		if err != nil {
 			return false, err
 		}

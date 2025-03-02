@@ -6,7 +6,7 @@ import (
 )
 
 /*
-Event represents a generic event structure with a dynamic payload.
+BaseEvent represents a generic event structure with a dynamic payload.
 It uses a type parameter T to allow for various payload schemas.
 
 Fields:
@@ -17,7 +17,7 @@ Fields:
 - EventSHA: A hash of the event data for deduplication purposes.
 - OccuredAt: The timestamp when the event occurred.
 */
-type Event[T any] struct {
+type BaseEvent[T any] struct {
 	TenantID     string    `json:"tenant_id"` // cannot be empty, unmarshaling will fail if empty
 	Type         string    `json:"type"`
 	Payload      T         `json:"payload,omitempty"`
@@ -27,7 +27,7 @@ type Event[T any] struct {
 }
 
 // Validate checks required fields
-func (e *Event[T]) Validate() error {
+func (e *BaseEvent[T]) Validate() error {
 	if e.TenantID == "" {
 		return errors.New("tenant_id cannot be empty")
 	}

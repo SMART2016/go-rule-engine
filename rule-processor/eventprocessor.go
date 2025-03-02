@@ -2,25 +2,15 @@ package rule_processor
 
 import (
 	"context"
-	"errors"
 	"github.com/SMART2016/go-rule-engine/models"
-	"github.com/SMART2016/go-rule-engine/store"
-	"time"
 )
 
-type Config interface {
-	GetDBConfigPath() string
-	GetRuleRepoPath() string
-	GetCleanupInterval() time.Duration
-	DbConfig() *EventStateStoreConfig
+type RuleProcessor interface {
+	Evaluate(ctx context.Context, event models.BaseEvent[any]) (bool, error)
 }
 
-type RuleProcessor[T any] interface {
-	Evaluate(ctx context.Context, event models.Event[T]) (bool, error)
-}
-
-type EventProcessor[T any] struct {
-	ruleProc RuleProcessor[T]
+type EventProcessor struct {
+	ruleProc RuleProcessor
 }
 
 /*
@@ -37,28 +27,15 @@ It creates a new EventProcessor instance with a GRuleProcessor instance, which i
 repository and event store.
 The function returns the EventProcessor instance and an error if any of the initialization steps fail.
 */
-func NewProcessor[T any](cfg Config) (*EventProcessor[T], error) {
-	// Initialize Rule Repository
-	ruleRepo, err := initializeSingleRuleRepoInstance(cfg)
+func NewProcessor(cfg Config) (*EventProcessor, error) {
+	//Initialize Rule Processor
+	ruleProc, err := NewGRuleProcessor(cfg)
 	if err != nil {
-		return nil, errors.New("Failed to Initialize Rule Repository: " + err.Error())
+
 	}
-
-	// Generate DSN
-	dsn := cfg.DbConfig().GenerateDSN()
-
-	// Initialize Event Store
-	eventStore, err := store.InitializeEventStateStore(dsn)
-	if err != nil {
-		return nil, errors.New("Failed to Initialize Event State Store: " + err.Error())
-	}
-
 	// Create a new EventProcessor instance with a GRuleProcessor instance
-	return &EventProcessor[T]{
-		ruleProc: &GRuleProcessor[T]{
-			ruleRepo:   ruleRepo,
-			eventStore: eventStore,
-		},
+	return &EventProcessor{
+		ruleProc: ruleProc,
 	}, nil
 }
 
@@ -67,7 +44,7 @@ ProcessEvent evaluates the event against the configured rules.
 
 Parameters:
   - ctx: context.Context - Used to pass a context to the rule engine.
-  - event: models.Event[T] - The event to be evaluated.
+  - event: models.BaseEvent[any] - The event to be evaluated.
 
 Returns:
   - bool: Indicates whether the event should be handled.
@@ -78,7 +55,7 @@ If the event should be handled, it returns true and nil error.
 If the event should not be handled, it returns false and nil error.
 If an error occurs during evaluation, it returns false and the error.
 */
-func (ep *EventProcessor[T]) ProcessEvent(ctx context.Context, event models.Event[T]) (bool, error) {
+func (ep *EventProcessor) ProcessEvent(ctx context.Context, event models.BaseEvent[any]) (bool, error) {
 	// Evaluate the event using the rule engine
 	return ep.ruleProc.Evaluate(ctx, event)
 }

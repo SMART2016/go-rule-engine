@@ -42,7 +42,23 @@ type FrameworkConfig struct {
 	rules                map[string]map[string][]Rule
 }
 
-// NewFrameworkConfig initializes a new configuration with functional options.
+/*
+NewFrameworkConfig initializes a new configuration with functional options.
+
+The following options are available:
+
+- WithDBConfigPath(string): sets the path to the database configuration file.
+
+- WithRuleRepoPath(string): sets the path to the rule repository JSON file.
+
+- WithCleanupInterval(time.Duration): sets the event cleanup interval.
+
+The provided options are applied to the configuration in order. If an option
+is not provided, the default value is used.
+
+The configurations from the provided paths are loaded after all options are
+applied. If the loading process fails, an error is returned.
+*/
 func NewFrameworkConfig(opts ...FrameworkConfigOption) (*FrameworkConfig, error) {
 	cfg := &FrameworkConfig{
 		CleanupInterval: 24 * time.Hour, // Default cleanup interval
