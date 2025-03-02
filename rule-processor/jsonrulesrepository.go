@@ -2,6 +2,8 @@ package rule_processor
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"os"
 	"sync"
 )
@@ -26,6 +28,9 @@ func initializeSingleRuleRepoInstance(frameWrkCfg Config) (*singletonJsonRuleRep
 		if err != nil {
 			instantiationErr = err
 			return
+		}
+		if err = validateRules("rules.json"); err != nil {
+			instantiationErr = errors.New(fmt.Sprintf("Rules Validation failed: %+v", err))
 		}
 		var r map[string]map[string][]Rule
 		err = json.Unmarshal(file, &r)

@@ -1,9 +1,21 @@
 package models
 
 import (
+	"context"
 	"errors"
 	"time"
 )
+
+type RuleProcessor interface {
+	// Evaluate takes a context and a BaseEvent and returns a boolean indicating
+	// whether the event was handled and an error if there was a problem.
+	Evaluate(ctx context.Context, event BaseEvent[any]) (bool, error)
+}
+
+// Evaluable ensures all events implement `Evaluate`
+type Evaluable interface {
+	Evaluate(ctx context.Context, processor RuleProcessor) (bool, error)
+}
 
 /*
 BaseEvent represents a generic event structure with a dynamic payload.
@@ -24,6 +36,11 @@ type BaseEvent[T any] struct {
 	ShouldHandle bool      `json:"should_handle,omitempty"`
 	EventSHA     string    `json:"event_sha,omitempty"`
 	OccuredAt    time.Time `json:"occured_at"`
+}
+
+func (e *BaseEvent[T]) Evaluate(ctx context.Context, processor RuleProcessor) (bool, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 // Validate checks required fields

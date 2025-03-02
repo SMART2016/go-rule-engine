@@ -9,19 +9,7 @@ import (
 	"github.com/hyperjumptech/grule-rule-engine/builder"
 	"github.com/hyperjumptech/grule-rule-engine/engine"
 	"github.com/hyperjumptech/grule-rule-engine/pkg"
-	"time"
 )
-
-type RuleRepository interface {
-	GetRules(tenantID, eventType string) ([]Rule, error)
-}
-
-type Config interface {
-	GetDBConfigPath() string
-	GetRuleRepoPath() string
-	GetCleanupInterval() time.Duration
-	DbConfig() *EventStateStoreConfig
-}
 
 type GRuleProcessor struct {
 	conf       *Config
