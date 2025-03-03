@@ -43,7 +43,7 @@ An Extensible go rule engine written on top of grule
 ```
 
 ## How to use
-- The main.go is the code that explain how to use this framework
+- The `examples/exampleeventprocessor.go` is the code that explain how to use this framework
 
 ## TODO's
 - Handle concurrency issue on state store 
