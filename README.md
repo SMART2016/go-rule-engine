@@ -18,6 +18,8 @@ An Extensible go rule engine written on top of grule
   - This will generate all code in `store` package from the schema and store sql file.
 
 ## Startup a local Postgres instance on docker
+- Build the image with pg cron
+  - `docker build -t postgres-cron .`
 - Run below command from /go-rule-engine folder directly
 ```
   docker run --hostname=3482db53b646 \
@@ -37,7 +39,7 @@ An Extensible go rule engine written on top of grule
   -p 5433:5432 \
   --restart=no \
   --runtime=runc \
-  -d postgres:latest
+  -d postgres-cron
 ```
 
 ## TODO's
