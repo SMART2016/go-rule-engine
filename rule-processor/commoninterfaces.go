@@ -30,7 +30,7 @@ type RuleRepository interface {
 	//
 	// It takes a tenant ID and an event type as input and returns a slice of
 	// Rule objects and an error if there was a problem.
-	GetRules(tenantID, eventType string) ([]Rule, error)
+	GetRules(tenantID, eventType string) ([]models.Rule, error)
 }
 
 /*

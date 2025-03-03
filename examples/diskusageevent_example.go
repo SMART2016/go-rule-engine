@@ -7,11 +7,8 @@ import (
 	"github.com/SMART2016/go-rule-engine/models"
 )
 
-type RuleProcessor interface {
-	Evaluate(ctx context.Context, event models.BaseEvent[any]) (bool, error)
-}
 type DiskUsagePayload struct {
-	UsagePercentage int    `json:"usage_percentage"`
+	Usage           int    `json:"usage_percentage"`
 	InstanceID      string `json:"instance_id"`
 	DiskSizeInBytes int64  `json:"disk_size_in_bytes"`
 }
@@ -29,7 +26,7 @@ func (e *DiskUsageEvent) Validate() error {
 	// This should be called by all custom events to handle basic field validations
 	e.BaseEvent.Validate()
 
-	if e.Payload.UsagePercentage < 0 {
+	if e.Payload.Usage < 0 {
 		return errors.New("usage_percentage should be greater than or equal to 0")
 	}
 	if e.Payload.InstanceID == "" {
@@ -43,6 +40,10 @@ func (e *DiskUsageEvent) Validate() error {
 	return nil
 }
 
+func (e *DiskUsageEvent) GetPayload() interface{} {
+	return e.Payload
+}
+
 /*
 DeduplicationKeyValues directly returns values instead of field names.
 DeduplicationKeyValues generates a pipe seperated string that can be used as a deduplication key.
@@ -52,11 +53,11 @@ to generate a string that is unique to the event. This string is then used
 as the deduplication key to prevent duplicate events from being processed.
 */
 func (e *DiskUsageEvent) DeduplicationKeyValues() string {
-	return fmt.Sprintf("%d|%s", e.Payload.UsagePercentage, e.Payload.InstanceID)
+	return fmt.Sprintf("%d|%s", e.Payload.Usage, e.Payload.InstanceID)
 }
 
 // Implement Evaluate function
-func (e *DiskUsageEvent) Evaluate(ctx context.Context, processor RuleProcessor) (bool, error) {
+func (e *DiskUsageEvent) Evaluate(ctx context.Context, processor models.RuleProcessor) (bool, error) {
 	// Generate SHA256 before passing event
 	var err error
 	e.EventSHA, err = e.GenerateSHA256(e.DeduplicationKeyValues())

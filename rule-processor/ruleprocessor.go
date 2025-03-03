@@ -11,10 +11,12 @@ import (
 	"github.com/hyperjumptech/grule-rule-engine/builder"
 	"github.com/hyperjumptech/grule-rule-engine/engine"
 	"github.com/hyperjumptech/grule-rule-engine/pkg"
+	"log"
+	"reflect"
 )
 
 type GRuleProcessor struct {
-	conf       *Config
+	conf       Config
 	ruleRepo   RuleRepository
 	eventStore store.Querier
 }
@@ -37,18 +39,19 @@ func NewGRuleProcessor(cfg Config) (*GRuleProcessor, error) {
 		return nil, errors.New("Failed to Initialize Rule Repository: " + err.Error())
 	}
 
+	//TODO: Should instantiate Event Store ones and use it to get new connection and connect to it
 	// Generate DSN
-	dsn := cfg.DbConfig().GenerateDSN()
+	//dsn := cfg.DbConfig().GenerateDSN()
 
-	// Initialize BaseEvent Store
-	eventStore, err := store.InitializeEventStateStore(dsn)
-	if err != nil {
-		return nil, errors.New("Failed to Initialize BaseEvent State Store: " + err.Error())
-	}
+	//// Initialize BaseEvent Store
+	//eventStore, err := store.InitializeEventStateStore(dsn)
+	//if err != nil {
+	//	return nil, errors.New("Failed to Initialize BaseEvent State Store: " + err.Error())
+	//}
 	return &GRuleProcessor{
-		conf:       &cfg,
-		ruleRepo:   ruleRepo,
-		eventStore: eventStore,
+		conf:     cfg,
+		ruleRepo: ruleRepo,
+		//eventStore: eventStore,
 	}, nil
 }
 
@@ -87,39 +90,50 @@ Returns:
 
 the event.
 */
+
 func (re *GRuleProcessor) Evaluate(ctx context.Context, event models.BaseEvent[any]) (bool, error) {
 	err := event.Validate()
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("[GRuleProcessor.Evaluate]: Event Validation failed %v", err)
 	}
+
 	rules, err := re.ruleRepo.GetRules(event.TenantID, event.Type)
 	if err != nil {
 		return false, nil // No rules found for this tenant and event type
 	}
+	// Generate DSN
+	dsn := re.conf.DbConfig().GenerateDSN()
 
+	// Initialize database
+	conn, err := store.NewDatabase(dsn)
+	if err != nil {
+		log.Fatal("Failed to initialize database:", err)
+		return false, err
+	}
+	defer conn.Close() // Ensure closure of DB connection
+
+	// Initialize Store
+	eventStore := store.New(conn.DB)
+	//b3f1b7856e68a4e004122b20c6c3bb43e312c50a3e25370362919f651b0c47a5
 	for _, rule := range rules {
 		if rule.Deduplication {
-			//Generate SHA for the event based on the configured duplication key or atleast for now tenant_id,event_type and payload
-			//store.IsDuplicateParams{event}
-			isDuplicate, err := re.eventStore.IsDuplicate(ctx, store.IsDuplicateParams{
+			//TODO: add rule_name or id too..
+			isDuplicate, err := eventStore.IsDuplicate(ctx, store.IsDuplicateParams{
 				TenantID:  event.TenantID,
 				EventType: event.Type,
 				EventSha:  event.EventSHA,
-				Column4:   rule.DedupWindow,
+				Column5:   rule.DedupWindow,
+				RuleID:    rule.RuleId,
 			})
 			if err != nil {
-				return false, err
+				return false, fmt.Errorf("[GRuleProcessor.Evaluate]: Duplicate Event Check Failed: %v", err)
 			}
 			if isDuplicate {
 				continue // Skip processing for duplicate events
 			}
 		}
 
-		// Initialize the KnowledgeLibrary and RuleBuilder
-		knowledgeLibrary := ast.NewKnowledgeLibrary()
-		ruleBuilder := builder.NewRuleBuilder(knowledgeLibrary)
-
-		// Build the rule into the KnowledgeBase
+		// Build the rule dynamically
 		grl := fmt.Sprintf(`
 			rule %s {
 				when
@@ -127,52 +141,119 @@ func (re *GRuleProcessor) Evaluate(ctx context.Context, event models.BaseEvent[a
 				then
 					%s;
 			}
-`, rule.Name, rule.Condition, rule.Action)
+		`, rule.RuleId, rule.Condition, rule.Action)
+
+		knowledgeLibrary := ast.NewKnowledgeLibrary()
+		ruleBuilder := builder.NewRuleBuilder(knowledgeLibrary)
 		resource := pkg.NewBytesResource([]byte(grl))
-		err := ruleBuilder.BuildRuleFromResource("EventRules", "0.0.1", resource)
+		err = ruleBuilder.BuildRuleFromResource("EventRules", "0.0.1", resource)
 		if err != nil {
-			return false, err
+			return false, fmt.Errorf("[GRuleProcessor.Evaluate]: Rule Build Failed : %v", err)
 		}
 
 		// Retrieve the KnowledgeBase instance
 		knowledgeBase, err := knowledgeLibrary.NewKnowledgeBaseInstance("EventRules", "0.0.1")
-
-		// Create a new DataContext and add the event
-		dataContext := ast.NewDataContext()
-		err = dataContext.Add("BaseEvent", &event)
 		if err != nil {
-			return false, err
+			return false, fmt.Errorf("[GRuleProcessor.Evaluate]: Failed to get KnowledgeBase: %v", err)
 		}
 
-		// Initialize the Grule engine
-		gruleEngine := engine.NewGruleEngine()
+		// Create a new DataContext
+		dataContext := ast.NewDataContext()
 
-		// Execute the rules
+		err = dataContext.Add("Event", &event) // Add main event
+		if err != nil {
+			return false, fmt.Errorf("[GRuleProcessor.Evaluate]: Failed to add Event to DataContext: %v", err)
+		}
+
+		// Extract and add Payload dynamically
+		//payload := extractPayload(event.Payload)
+		//if payload == nil {
+		//	return false, fmt.Errorf("[GRuleProcessor.Evaluate]: Failed to extract Payload")
+		//}
+
+		// Add Payload using interface
+		payload := event.GetPayload()
+		err = dataContext.Add("Payload", payload)
+		if err != nil {
+			return false, fmt.Errorf("[GRuleProcessor.Evaluate]: Failed to add Payload to DataContext: %v", err)
+		}
+
+		err = dataContext.Add("Payload", payload)
+		if err != nil {
+			return false, fmt.Errorf("[GRuleProcessor.Evaluate]: Failed to add Payload to DataContext: %v", err)
+		}
+
+		// Execute rules
+		gruleEngine := engine.NewGruleEngine()
 		err = gruleEngine.Execute(dataContext, knowledgeBase)
 		if err != nil {
-			return false, err
+			return false, fmt.Errorf("[GRuleProcessor.Evaluate]: Rule Execution Failed : %v", err)
 		}
 
-		// If the rule's action indicates an email should be sent
 		if event.ShouldHandle {
-			// Save the event to the store to track it for deduplication
-			jsonPayload, err := event.ToJSON(event.Payload)
+			jsonPayload, err := json.Marshal(payload)
 			if err != nil {
-				return false, errors.New(fmt.Sprintf("Failed to convert payload to JSON: %v", err.Error()))
+				return false, fmt.Errorf("Failed to convert payload to JSON: %v", err)
 			}
-			err = re.eventStore.SaveEvent(ctx, store.SaveEventParams{
+
+			err = eventStore.SaveEvent(ctx, store.SaveEventParams{
 				TenantID:  event.TenantID,
 				EventType: event.Type,
+				RuleID:    rule.RuleId,
 				EventSha:  event.EventSHA,
-				Column4:   json.RawMessage(jsonPayload),
+				Column5:   json.RawMessage(jsonPayload),
 			})
 			if err != nil {
-				return false, errors.New(fmt.Sprintf("Failed to save event to store: %v", err.Error()))
+				return false, fmt.Errorf("Failed to save event to store: %v", err)
 			}
-			// Trigger email sending logic here
+
 			return true, nil
 		}
 	}
 
 	return false, nil
+}
+
+/*
+extractPayload extracts the payload from the event.
+
+If the payload is a nil value, nil is returned.
+
+If the payload is a pointer, the underlying value is returned.
+
+If the payload is a struct, the struct is returned as an interface.
+
+If the payload is a valid JSON string, it is unmarshaled into a map
+and returned.
+
+If the payload is not one of the above, nil is returned.
+*/
+func extractPayload(payload any) any {
+	v := reflect.ValueOf(payload)
+
+	// If payload is nil, return nil
+	if !v.IsValid() || v.IsZero() {
+		return nil
+	}
+
+	// If payload is a pointer, get the underlying value
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
+	// If payload is a struct, return it as an interface
+	if v.Kind() == reflect.Struct {
+		return payload
+	}
+
+	// If payload is a valid JSON string, unmarshal it into a map
+	if str, ok := payload.(string); ok {
+		var result map[string]interface{}
+		err := json.Unmarshal([]byte(str), &result)
+		if err == nil {
+			return result
+		}
+	}
+
+	return nil
 }

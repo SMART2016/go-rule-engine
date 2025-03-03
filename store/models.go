@@ -14,6 +14,7 @@ type ProcessedEvent struct {
 	ID                          int64                 `json:"id"`
 	TenantID                    string                `json:"tenant_id"`
 	EventType                   string                `json:"event_type"`
+	RuleID                      string                `json:"rule_id"`
 	EventSha                    string                `json:"event_sha"`
 	EventDetails                pqtype.NullRawMessage `json:"event_details"`
 	OccurredAt                  sql.NullTime          `json:"occurred_at"`

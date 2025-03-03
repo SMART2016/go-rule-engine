@@ -1,24 +1,24 @@
 {
-  "tenant_1": {
-      "disk_space_80_percent":{
-        "name": "Disk Space 80% Alert",
+  "tenant_1": [
+      {
+        "rule_id": "disk_space_80_percent_alert",
         "event_type": "disk_space",
-        "condition": "Event.Payload.Usage >= 80",
+        "condition": "Payload.Usage >= 80 && Event.ShouldHandle == false",
         "action": "Event.ShouldHandle = true",
         "send_email": true,
         "deduplication": true,
         "dedup_window": 3,
         "payload_fields": ["Usage"]
       },
-      "disk_space_90_percent":{
-      "name": "Disk Space 90% Alert",
+    {
+      "rule_id": "disk_space_90_percent_alert",
       "event_type": "disk_space",
-      "condition": "Event.Payload.Usage >= 90",
+      "condition": "Payload.Usage >= 90 && Event.ShouldHandle == false",
       "action": "Event.ShouldHandle = true",
       "send_email": true,
       "deduplication": true,
       "dedup_window": 3,
       "payload_fields": ["Usage"]
       }
-  }
+  ]
 }

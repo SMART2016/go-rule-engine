@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/SMART2016/go-rule-engine/models"
 	"os"
 	"time"
 )
@@ -21,8 +22,9 @@ type EventStateStoreConfig struct {
 	Port     int    `json:"port"`
 	User     string `json:"user"`
 	Password string `json:"password"`
-	Database string `json:"database"`
+	Database string `json:"dbname"`
 	SSLMode  string `json:"sslmode"`
+	TTLhours int    `json:"ttl_hours"`
 }
 
 /*
@@ -47,7 +49,7 @@ type FrameworkConfig struct {
 	RuleRepoPath         string
 	CleanupInterval      time.Duration
 	eventStoreConfig     *EventStateStoreConfig
-	rules                map[string]map[string][]Rule
+	rules                map[string]map[string][]models.Rule
 }
 
 /*
@@ -100,26 +102,10 @@ func (cfg *FrameworkConfig) DbConfig() *EventStateStoreConfig {
 	return cfg.eventStoreConfig
 }
 
-// Rule represents a single rule in the rule repository.
-type Rule struct {
-	Name          string        `json:"name"`
-	EventType     string        `json:"event_type"`
-	Condition     string        `json:"condition"`
-	Action        string        `json:"action"`
-	SendEmail     bool          `json:"send_email"`
-	Deduplication bool          `json:"deduplication"`
-	DedupWindow   time.Duration `json:"dedup_window"`
-}
-
 func (cfg *FrameworkConfig) Load() error {
 	//Load DB config from the provided path by the consumer.
 	if err := cfg.LoadDBConfig(); err != nil {
 		return errors.New("load db config failed, Error : " + err.Error())
-	}
-
-	//Initialize a Rule repository instance and load the rules to the repository
-	if _, err := initializeSingleRuleRepoInstance(cfg); err != nil {
-		return errors.New("Initializing Rules Repository failed, Error : " + err.Error())
 	}
 	return nil
 }

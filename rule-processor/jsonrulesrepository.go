@@ -2,6 +2,7 @@ package rule_processor
 
 import (
 	"encoding/json"
+	"github.com/SMART2016/go-rule-engine/models"
 	"os"
 	"sync"
 )
@@ -9,7 +10,7 @@ import (
 // RuleRepository provides access to rules.
 type singletonJsonRuleRepository struct {
 	cfg   Config
-	rules map[string]map[string][]Rule
+	rules map[string][]models.Rule
 	mu    sync.RWMutex
 }
 
@@ -27,11 +28,11 @@ func initializeSingleRuleRepoInstance(frameWrkCfg Config) (*singletonJsonRuleRep
 			instantiationErr = err
 			return
 		}
-		//TODO: Handle rules validation against the event schema seperately in the future
+		//TODO: Handle rules validation against the event schema seperately
 		//if err = validateRules("rules.json"); err != nil {
 		//	instantiationErr = errors.New(fmt.Sprintf("Rules Validation failed: %+v", err))
 		//}
-		var r map[string]map[string][]Rule
+		var r map[string][]models.Rule
 		err = json.Unmarshal(file, &r)
 		if err != nil {
 			instantiationErr = err
@@ -46,15 +47,27 @@ func initializeSingleRuleRepoInstance(frameWrkCfg Config) (*singletonJsonRuleRep
 	return instance, instantiationErr
 }
 
-// GetRules retrieves rules for a specific tenant and event type.
-func (r *singletonJsonRuleRepository) GetRules(tenantID, eventType string) ([]Rule, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+/*
+GetRules retrieves rules for a specific tenant and event type.
+GetRules retrieves all rules for a specified tenant and event type.
 
+It acquires a read lock to ensure thread-safe access to the rules map.
+If the tenant's rules exist, it filters rules matching the given event type.
+It returns a slice of matching rules or an empty slice if none are found.
+An error is returned if any issues occur during retrieval.
+*/
+func (r *singletonJsonRuleRepository) GetRules(tenantID, eventType string) ([]models.Rule, error) {
+	r.mu.RLock()         // Acquire read lock for thread-safe access
+	defer r.mu.RUnlock() // Ensure lock is released
+
+	var rules []models.Rule
 	if tenantRules, ok := r.rules[tenantID]; ok {
-		if eventRules, ok := tenantRules[eventType]; ok {
-			return eventRules, nil
+		for _, rule := range tenantRules {
+			if eventType == rule.EventType {
+				rules = append(rules, rule)
+			}
 		}
 	}
-	return nil, nil
+
+	return rules, nil
 }

@@ -43,6 +43,7 @@ type BaseEvent[T any] struct {
 }
 
 func (e *BaseEvent[T]) Evaluate(ctx context.Context, processor RuleProcessor) (bool, error) {
+
 	return processor.Evaluate(ctx, BaseEvent[any]{
 		TenantID:     e.TenantID,
 		Type:         e.Type,
@@ -66,11 +67,17 @@ func (e *BaseEvent[T]) Validate() error {
 		if !json.Valid([]byte(payload)) {
 			return errors.New("payload is a string but not valid JSON")
 		}
-	case struct{}: // Ensures it's a struct
-		// Struct is valid, do nothing
+	case any: // Ensures it's a struct
+		// ✅ Check if the event type is registered inside this block
+		eventRegistry := GetEventRegistry() // Get the global registry instance
+		_, registered := eventRegistry.GetRegistry()[e.Type]
+		if !registered {
+			return fmt.Errorf("event type '%s' is not registered in EventRegistry", e.Type)
+		}
 	default:
-		return fmt.Errorf("Invalid payload type: expected struct or JSON string, got %T", e.Payload)
+		return fmt.Errorf("invalid payload type: expected struct or JSON string, got %T", e.Payload)
 	}
+
 	return nil
 }
 
@@ -106,4 +113,8 @@ func (e *BaseEvent[T]) ToJSON(any) (string, error) {
 	}
 
 	return string(payloadJSON), nil
+}
+
+func (e *BaseEvent[T]) GetPayload() interface{} {
+	return e.Payload
 }

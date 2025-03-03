@@ -3,7 +3,7 @@ package models
 import "time"
 
 type Rule struct {
-	Name          string        `json:"name"`
+	RuleId        string        `json:"rule_id"`
 	EventType     string        `json:"event_type"`
 	Condition     string        `json:"condition"`     // Expression evaluated by grule
 	Action        string        `json:"action"`        // Defines what to do when condition is met

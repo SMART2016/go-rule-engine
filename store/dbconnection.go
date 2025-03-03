@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-// Database struct to manage DB connection
+// StoreDatabase struct to manage DB connection
 type Database struct {
 	DB *sql.DB
 }
@@ -27,7 +27,7 @@ func NewDatabase(dsn string) (*Database, error) {
 		return nil, err
 	}
 
-	log.Println("Database connection established")
+	log.Println("StoreDatabase connection established")
 	return &Database{DB: db}, nil
 }
 
@@ -38,6 +38,6 @@ func (d *Database) Close() {
 		if err != nil {
 			return
 		}
-		log.Println("Database connection closed")
+		log.Println("StoreDatabase connection closed")
 	}
 }
