@@ -7,7 +7,8 @@
         "action": "Event.ShouldHandle = true",
         "send_email": true,
         "deduplication": true,
-        "dedup_window": 3
+        "dedup_window": 3,
+        "payload_fields": ["Usage"]
       },
       "disk_space_90_percent":{
       "name": "Disk Space 90% Alert",
@@ -16,7 +17,8 @@
       "action": "Event.ShouldHandle = true",
       "send_email": true,
       "deduplication": true,
-      "dedup_window": 3
+      "dedup_window": 3,
+      "payload_fields": ["Usage"]
       }
   }
 }
