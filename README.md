@@ -13,6 +13,7 @@ An Extensible go rule engine written on top of grule
   - `direnv allow`
 
 ## To generate the store code to fetch , save and remove processed events with sqlc
+- Navigate to the configs directory and then run below
 - `sqlc generate`
   - This will generate all code in `store` package from the schema and store sql file.
 

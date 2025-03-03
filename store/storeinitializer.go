@@ -12,6 +12,8 @@ func InitializeEventStateStore(dsn string) (Querier, error) {
 	defer database.Close() // Ensure closure of DB connection
 
 	// Initialize SQLC Queries
+	//TODO: Handle concurrency in the store
+	//TODO: Add strategy to remove older events
 	eventStore := New(database.DB)
 	return eventStore, nil
 }

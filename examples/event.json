@@ -1,4 +1,4 @@
-{
+[{
   "payload": {
     "usage_percentage" : 80,
     "instance_id": "abcd",
@@ -7,3 +7,10 @@
   "tenant_id": "12345A",
   "type": "disk_space"
 }
+,
+
+{
+  "payload": "hello there",
+  "tenant_id": "12345A",
+  "type": "disk_space"
+}]

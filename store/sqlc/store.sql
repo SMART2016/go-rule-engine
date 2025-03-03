@@ -1,6 +1,8 @@
 -- name: SaveEvent :exec
-INSERT INTO processed_events (tenant_id, event_type, event_sha, occurred_at)
-VALUES ($1, $2, $3, NOW());
+INSERT INTO processed_events (tenant_id, event_type, event_sha,  event_details,occurred_at,actual_event_persistentce_time)
+VALUES ($1, $2, $3, $4::json,$5,NOW() );
+
+
 
 -- name: IsDuplicate :one
 SELECT EXISTS (

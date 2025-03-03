@@ -11,10 +11,11 @@ import (
 )
 
 type ProcessedEvent struct {
-	ID           int64                 `json:"id"`
-	TenantID     string                `json:"tenant_id"`
-	EventType    string                `json:"event_type"`
-	EventSha     string                `json:"event_sha"`
-	EventDetails pqtype.NullRawMessage `json:"event_details"`
-	CreatedAt    sql.NullTime          `json:"created_at"`
+	ID                          int64                 `json:"id"`
+	TenantID                    string                `json:"tenant_id"`
+	EventType                   string                `json:"event_type"`
+	EventSha                    string                `json:"event_sha"`
+	EventDetails                pqtype.NullRawMessage `json:"event_details"`
+	OccurredAt                  sql.NullTime          `json:"occurred_at"`
+	ActualEventPersistentceTime sql.NullTime          `json:"actual_event_persistentce_time"`
 }

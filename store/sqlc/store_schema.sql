@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS processed_events (
                                                 event_type VARCHAR(255) NOT NULL,
                                                 event_sha VARCHAR(255) NOT NULL,
                                                 event_details json,
-                                                Created_at TIMESTAMP DEFAULT NOW()
+                                                occurred_at TIMESTAMP DEFAULT NOW(),
+                                                actual_event_persistentce_time TIMESTAMP DEFAULT NOW()
 );
 
 -- Create indexes separately

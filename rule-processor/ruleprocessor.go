@@ -2,6 +2,7 @@ package rule_processor
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/SMART2016/go-rule-engine/models"
@@ -51,6 +52,41 @@ func NewGRuleProcessor(cfg Config) (*GRuleProcessor, error) {
 	}, nil
 }
 
+/*
+Evaluate takes a context and a BaseEvent and returns a boolean indicating
+whether the event was handled and an error if there was a problem.
+
+The method first validates the event. If the event is invalid, an error is
+returned. If the event is valid, it retrieves the rules associated with the
+event's tenant and type from the rule repository. If no rules are found, the
+method returns false, nil. If rules are found, the method iterates over the
+rules and for each rule:
+
+1. If the rule has deduplication enabled, the method checks if the event is a
+duplicate by checking the event's SHA in the event store. If the event is a
+duplicate, the method skips processing the rule.
+
+2. The method builds the rule using the RuleBuilder and adds it to the
+KnowledgeBase.
+
+3. The method creates a new DataContext and adds the event to it.
+
+4. The method initializes the Grule engine and executes the rules in the
+KnowledgeBase.
+
+5. If the rule's action indicates an email should be sent, the method saves the
+event to the event store and triggers the email sending logic.
+
+Parameters:
+  - ctx: context.Context - A context to manage cancellation and deadlines.
+  - event: models.BaseEvent[any] - The event to be evaluated.
+
+Returns:
+  - bool - Indicates whether the event was handled successfully.
+  - error - Contains any error encountered during processing or evaluation of
+
+the event.
+*/
 func (re *GRuleProcessor) Evaluate(ctx context.Context, event models.BaseEvent[any]) (bool, error) {
 	err := event.Validate()
 	if err != nil {
@@ -63,10 +99,14 @@ func (re *GRuleProcessor) Evaluate(ctx context.Context, event models.BaseEvent[a
 
 	for _, rule := range rules {
 		if rule.Deduplication {
-			//TODO: populate store.IsDuplicateParams object from event and pass it to isDuplicate
-			//generate SHA for the event based on the configured duplication key or atleast for now tenant_is,event_type and payload
+			//Generate SHA for the event based on the configured duplication key or atleast for now tenant_id,event_type and payload
 			//store.IsDuplicateParams{event}
-			isDuplicate, err := re.eventStore.IsDuplicate(ctx, store.IsDuplicateParams{})
+			isDuplicate, err := re.eventStore.IsDuplicate(ctx, store.IsDuplicateParams{
+				TenantID:  event.TenantID,
+				EventType: event.Type,
+				EventSha:  event.EventSHA,
+				Column4:   rule.DedupWindow,
+			})
 			if err != nil {
 				return false, err
 			}
@@ -116,10 +156,18 @@ func (re *GRuleProcessor) Evaluate(ctx context.Context, event models.BaseEvent[a
 		// If the rule's action indicates an email should be sent
 		if event.ShouldHandle {
 			// Save the event to the store to track it for deduplication
-			//TODO: populate store.SaveEventParams object from event result and pass it to SaveEvent
-			err := re.eventStore.SaveEvent(ctx, store.SaveEventParams{event.TenantID, event.Type, event.EventSHA})
+			jsonPayload, err := event.ToJSON(event.Payload)
 			if err != nil {
-				return false, err
+				return false, errors.New(fmt.Sprintf("Failed to convert payload to JSON: %v", err.Error()))
+			}
+			err = re.eventStore.SaveEvent(ctx, store.SaveEventParams{
+				TenantID:  event.TenantID,
+				EventType: event.Type,
+				EventSha:  event.EventSHA,
+				Column4:   json.RawMessage(jsonPayload),
+			})
+			if err != nil {
+				return false, errors.New(fmt.Sprintf("Failed to save event to store: %v", err.Error()))
 			}
 			// Trigger email sending logic here
 			return true, nil

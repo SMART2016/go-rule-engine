@@ -7,6 +7,8 @@ package store
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
 )
 
 const cleanupOldEvents = `-- name: CleanupOldEvents :exec
@@ -56,17 +58,25 @@ func (q *Queries) IsDuplicate(ctx context.Context, arg IsDuplicateParams) (bool,
 }
 
 const saveEvent = `-- name: SaveEvent :exec
-INSERT INTO processed_events (tenant_id, event_type, event_sha, occurred_at)
-VALUES ($1, $2, $3, NOW())
+INSERT INTO processed_events (tenant_id, event_type, event_sha,  event_details,occurred_at,actual_event_persistentce_time)
+VALUES ($1, $2, $3, $4::json,$5,NOW() )
 `
 
 type SaveEventParams struct {
-	TenantID  string `json:"tenant_id"`
-	EventType string `json:"event_type"`
-	EventSha  string `json:"event_sha"`
+	TenantID   string          `json:"tenant_id"`
+	EventType  string          `json:"event_type"`
+	EventSha   string          `json:"event_sha"`
+	Column4    json.RawMessage `json:"column_4"`
+	OccurredAt sql.NullTime    `json:"occurred_at"`
 }
 
 func (q *Queries) SaveEvent(ctx context.Context, arg SaveEventParams) error {
-	_, err := q.db.ExecContext(ctx, saveEvent, arg.TenantID, arg.EventType, arg.EventSha)
+	_, err := q.db.ExecContext(ctx, saveEvent,
+		arg.TenantID,
+		arg.EventType,
+		arg.EventSha,
+		arg.Column4,
+		arg.OccurredAt,
+	)
 	return err
 }

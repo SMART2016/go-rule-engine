@@ -7,13 +7,26 @@ import (
 	"github.com/SMART2016/go-rule-engine/models"
 	ruleprocessor "github.com/SMART2016/go-rule-engine/rule-processor"
 	"log"
+	"time"
 )
 
 func main() {
-	//TODO: Initialize the config instance
+	//Initialize the config instance
+	opts := []ruleprocessor.FrameworkConfigOption{
+		ruleprocessor.WithDBConfigPath("configs/db_config.json"),
+		ruleprocessor.WithRuleRepoPath("configs/rules.json"),
+		ruleprocessor.WithCleanupInterval(1 * time.Hour),
+	}
+	config, err := ruleprocessor.NewFrameworkConfig(opts...)
+	if err != nil {
+		log.Fatalf("Error initializing framework config: %v", err)
+	}
 
 	// Initialize dependencies
-	processor, err := ruleprocessor.NewGRuleProcessor(nil)
+	processor, err := ruleprocessor.NewGRuleProcessor(config)
+	if err != nil {
+		log.Fatalf("Error initializing rule processor: %v", err)
+	}
 
 	// Initialize event registry
 	registry := ruleprocessor.GetEventRegistry()
