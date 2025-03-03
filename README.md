@@ -42,6 +42,9 @@ An Extensible go rule engine written on top of grule
   -d postgres-cron
 ```
 
+## How to use
+- The examples/exampleeventprocessor.go is the code that explain how to use this framework
+
 ## TODO's
 - Handle concurrency issue on state store 
   - Check if write fails how we can handle same using message bus commits

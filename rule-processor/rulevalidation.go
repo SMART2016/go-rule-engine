@@ -3,7 +3,7 @@ package rule_processor
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/SMART2016/go-rule-engine/examples"
+	"github.com/SMART2016/go-rule-engine/examples/events"
 	"github.com/SMART2016/go-rule-engine/models"
 	"os"
 	"reflect"
@@ -11,7 +11,7 @@ import (
 
 // Map event types to their corresponding payload struct.
 var eventPayloadTypes = map[string]reflect.Type{
-	"disk_space": reflect.TypeOf(examples.DiskUsagePayload{}),
+	"disk_space": reflect.TypeOf(events.DiskUsagePayload{}),
 }
 
 // ValidateRules loads rules from a JSON file and validates their `payload_fields`.
