@@ -1,3 +1,4 @@
+-- Not working Currently
 SELECT cron.schedule(
                'event_cleanup',  -- Job name
                '*/10 * * * *',   -- Runs every 10 minutes
