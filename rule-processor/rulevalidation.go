@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/SMART2016/go-rule-engine/examples/events"
+
 	"github.com/SMART2016/go-rule-engine/models"
 	"os"
 	"reflect"
 )
 
 // Map event types to their corresponding payload struct.
-var eventPayloadTypes = map[string]reflect.Type{
+var eventPayloadTypes map[string]reflect.Type = map[string]reflect.Type{
 	"disk_space": reflect.TypeOf(events.DiskUsagePayload{}),
 }
 

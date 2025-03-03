@@ -1,4 +1,4 @@
-package examples
+package events
 
 import (
 	"context"
