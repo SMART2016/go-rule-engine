@@ -1,5 +1,5 @@
 {
-  "tenant_1": [
+  "tenant_12": [
       {
         "rule_id": "disk_space_80_percent_alert",
         "event_type": "disk_space",
@@ -20,5 +20,25 @@
       "dedup_window": 3,
       "payload_fields": ["Usage"]
       }
-  ]
+  ],
+  "tenant_default": [{
+    "rule_id": "disk_space_80_percent_alert",
+    "event_type": "disk_space",
+    "condition": "Payload.Usage >= 80 && Event.ShouldHandle == false",
+    "action": "Event.ShouldHandle = true",
+    "send_email": true,
+    "deduplication": true,
+    "dedup_window": 3,
+    "payload_fields": ["Usage"]
+  },
+    {
+      "rule_id": "disk_space_90_percent_alert",
+      "event_type": "disk_space",
+      "condition": "Payload.Usage >= 90 && Event.ShouldHandle == false",
+      "action": "Event.ShouldHandle = true",
+      "send_email": true,
+      "deduplication": true,
+      "dedup_window": 3,
+      "payload_fields": ["Usage"]
+    }]
 }

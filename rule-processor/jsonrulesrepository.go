@@ -7,6 +7,10 @@ import (
 	"sync"
 )
 
+const (
+	DEFAULT_TENANT_RULET_ID = "tenant_default"
+)
+
 // RuleRepository provides access to rules.
 type singletonJsonRuleRepository struct {
 	cfg   Config
@@ -65,6 +69,14 @@ func (r *singletonJsonRuleRepository) GetRules(tenantID, eventType string) ([]mo
 		for _, rule := range tenantRules {
 			if eventType == rule.EventType {
 				rules = append(rules, rule)
+			}
+		}
+	} else {
+		if tenantRules, ok = r.rules[DEFAULT_TENANT_RULET_ID]; ok {
+			for _, rule := range tenantRules {
+				if eventType == rule.EventType {
+					rules = append(rules, rule)
+				}
 			}
 		}
 	}
