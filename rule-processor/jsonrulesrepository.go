@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	DEFAULT_TENANT_RULET_ID = "tenant_default"
+	DEFAULT_TENANT_RULE_ID = "tenant_default"
 )
 
 // RuleRepository provides access to rules.
@@ -72,7 +72,7 @@ func (r *singletonJsonRuleRepository) GetRules(tenantID, eventType string) ([]mo
 			}
 		}
 	} else {
-		if tenantRules, ok = r.rules[DEFAULT_TENANT_RULET_ID]; ok {
+		if tenantRules, ok = r.rules[DEFAULT_TENANT_RULE_ID]; ok {
 			for _, rule := range tenantRules {
 				if eventType == rule.EventType {
 					rules = append(rules, rule)
