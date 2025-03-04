@@ -9,7 +9,6 @@ package rule_processor
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/SMART2016/go-rule-engine/models"
 	"os"
@@ -102,16 +101,22 @@ func (cfg *FrameworkConfig) DbConfig() *EventStateStoreConfig {
 	return cfg.eventStoreConfig
 }
 
+/*
+Load loads all configurations from the provided paths.
+
+First, it loads the database configuration from a JSON file.
+If the loading process fails, an error is returned.
+*/
 func (cfg *FrameworkConfig) Load() error {
 	//Load DB config from the provided path by the consumer.
-	if err := cfg.LoadDBConfig(); err != nil {
-		return errors.New("load db config failed, Error : " + err.Error())
+	if err := cfg.LoadEventStateConfig(); err != nil {
+		return fmt.Errorf("load db config failed: %w", err)
 	}
 	return nil
 }
 
-// LoadDBConfig loads the database configuration from a JSON file.
-func (cfg *FrameworkConfig) LoadDBConfig() error {
+// LoadEventStateConfig loads the database configuration from a JSON file.
+func (cfg *FrameworkConfig) LoadEventStateConfig() error {
 	file, err := os.ReadFile(cfg.EventStoreConfigPath)
 	if err != nil {
 		return err
