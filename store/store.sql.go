@@ -7,8 +7,8 @@ package store
 
 import (
 	"context"
-	"database/sql"
-	"encoding/json"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const cleanupOldEvents = `-- name: CleanupOldEvents :exec
@@ -23,42 +23,43 @@ DELETE FROM processed_events
 WHERE processed_events.ctid = rows_to_delete.ctid
 `
 
-func (q *Queries) CleanupOldEvents(ctx context.Context, dollar_1 interface{}) error {
-	_, err := q.db.ExecContext(ctx, cleanupOldEvents, dollar_1)
+func (q *Queries) CleanupOldEvents(ctx context.Context, db DBTX, dollar_1 interface{}) error {
+	_, err := db.Exec(ctx, cleanupOldEvents, dollar_1)
 	return err
 }
 
 const isDuplicate = `-- name: IsDuplicate :one
-SELECT EXISTS (
-    SELECT 1 FROM processed_events
-    WHERE tenant_id = $1
-      AND event_type = $2
-      AND rule_id = $3
-      AND event_sha = $4
-      AND actual_event_persistentce_time >= NOW() - INTERVAL '1 hour' * $5
-      LIMIT 1
-)
+SELECT COALESCE(
+               (SELECT EXISTS (
+                   SELECT 1 FROM processed_events
+                   WHERE tenant_id = $1
+                     AND event_type = $2
+                     AND rule_id = $3
+                     AND event_sha = $4
+                     AND actual_event_persistentce_time >= NOW() - INTERVAL '1 hour' * $5
+                   LIMIT 1
+               )), FALSE) AS is_duplicate
 `
 
 type IsDuplicateParams struct {
-	TenantID  string      `json:"tenant_id"`
-	EventType string      `json:"event_type"`
-	RuleID    string      `json:"rule_id"`
-	EventSha  string      `json:"event_sha"`
-	Column5   interface{} `json:"column_5"`
+	TenantID  string
+	EventType string
+	RuleID    string
+	EventSha  string
+	Column5   interface{}
 }
 
-func (q *Queries) IsDuplicate(ctx context.Context, arg IsDuplicateParams) (bool, error) {
-	row := q.db.QueryRowContext(ctx, isDuplicate,
+func (q *Queries) IsDuplicate(ctx context.Context, db DBTX, arg IsDuplicateParams) (interface{}, error) {
+	row := db.QueryRow(ctx, isDuplicate,
 		arg.TenantID,
 		arg.EventType,
 		arg.RuleID,
 		arg.EventSha,
 		arg.Column5,
 	)
-	var exists bool
-	err := row.Scan(&exists)
-	return exists, err
+	var is_duplicate interface{}
+	err := row.Scan(&is_duplicate)
+	return is_duplicate, err
 }
 
 const saveEvent = `-- name: SaveEvent :exec
@@ -68,16 +69,16 @@ VALUES ($1, $2, $3, $4, $5::json, $6,NOW())
 `
 
 type SaveEventParams struct {
-	TenantID   string          `json:"tenant_id"`
-	EventType  string          `json:"event_type"`
-	RuleID     string          `json:"rule_id"`
-	EventSha   string          `json:"event_sha"`
-	Column5    json.RawMessage `json:"column_5"`
-	OccurredAt sql.NullTime    `json:"occurred_at"`
+	TenantID   string
+	EventType  string
+	RuleID     string
+	EventSha   string
+	Column5    []byte
+	OccurredAt pgtype.Timestamp
 }
 
-func (q *Queries) SaveEvent(ctx context.Context, arg SaveEventParams) error {
-	_, err := q.db.ExecContext(ctx, saveEvent,
+func (q *Queries) SaveEvent(ctx context.Context, db DBTX, arg SaveEventParams) error {
+	_, err := db.Exec(ctx, saveEvent,
 		arg.TenantID,
 		arg.EventType,
 		arg.RuleID,
