@@ -3,6 +3,7 @@ package rule_processor
 import (
 	"context"
 	"github.com/SMART2016/go-rule-engine/models"
+	"github.com/SMART2016/go-rule-engine/store"
 	"time"
 )
 
@@ -56,4 +57,21 @@ type Config interface {
 
 	// DbConfig returns the database configuration.
 	DbConfig() *EventStateStoreConfig
+}
+
+/*
+EventStore is an interface for managing events.
+
+It provides methods to check for duplicate events, save new events, and
+cleanup old events from the database.
+*/
+type EventStore interface {
+	// IsDuplicate checks if an event is a duplicate.
+	//
+	// It takes a context, a database transaction, and parameters for checking
+	// duplication, returning a boolean indicating duplication status and an error if
+	// there was a problem.
+	IsDuplicate(ctx context.Context, db store.DBTX, arg store.IsDuplicateParams) (interface{}, error)
+	SaveEvent(ctx context.Context, db store.DBTX, arg store.SaveEventParams) error
+	CleanupOldEvents(ctx context.Context, db store.DBTX, dollar_1 interface{}) error
 }

@@ -18,7 +18,7 @@ import (
 type GRuleProcessor struct {
 	conf       Config
 	ruleRepo   RuleRepository
-	eventStore store.Querier
+	eventStore EventStore
 }
 
 /*
@@ -39,19 +39,10 @@ func NewGRuleProcessor(cfg Config) (*GRuleProcessor, error) {
 		return nil, errors.New("Failed to Initialize Rule Repository: " + err.Error())
 	}
 
-	//TODO: Should instantiate Event Store ones and use it to get new connection and connect to it
-	// Generate DSN
-	//dsn := cfg.DbConfig().GenerateDSN()
-
-	//// Initialize BaseEvent Store
-	//eventStore, err := store.InitializeEventStateStore(dsn)
-	//if err != nil {
-	//	return nil, errors.New("Failed to Initialize BaseEvent State Store: " + err.Error())
-	//}
 	return &GRuleProcessor{
-		conf:     cfg,
-		ruleRepo: ruleRepo,
-		//eventStore: eventStore,
+		conf:       cfg,
+		ruleRepo:   ruleRepo,
+		eventStore: store.New(),
 	}, nil
 }
 
@@ -105,20 +96,21 @@ func (re *GRuleProcessor) Evaluate(ctx context.Context, event models.BaseEvent[a
 	dsn := re.conf.DbConfig().GenerateDSN()
 
 	// Initialize database
-	conn, err := store.NewDatabase(dsn)
+	database, err := store.NewDatabase(dsn)
 	if err != nil {
 		log.Fatal("Failed to initialize database:", err)
 		return false, err
 	}
-	defer conn.Close() // Ensure closure of DB connection
+	defer database.Close() // Ensure closure of DB connection
 
-	// Initialize Store
-	eventStore := store.New(conn.DB)
-	//b3f1b7856e68a4e004122b20c6c3bb43e312c50a3e25370362919f651b0c47a5
 	for _, rule := range rules {
 		if rule.Deduplication {
-			//TODO: add rule_name or id too..
-			isDuplicate, err := eventStore.IsDuplicate(ctx, store.IsDuplicateParams{
+			//Update the event SHA to include the rule ID if it's enabled in the rule
+			if rule.IncludeRuleIdInDedupKey {
+				event.EventSHA = fmt.Sprintf("%s:%s", rule.RuleId, event.EventSHA)
+			}
+			// Check if event is a duplicate
+			isDuplicate, err := re.eventStore.IsDuplicate(ctx, database.Conn, store.IsDuplicateParams{
 				TenantID:  event.TenantID,
 				EventType: event.Type,
 				EventSha:  event.EventSHA,
@@ -128,7 +120,7 @@ func (re *GRuleProcessor) Evaluate(ctx context.Context, event models.BaseEvent[a
 			if err != nil {
 				return false, fmt.Errorf("[GRuleProcessor.Evaluate]: Duplicate Event Check Failed: %v", err)
 			}
-			if isDuplicate {
+			if isDuplicate.(bool) {
 				continue // Skip processing for duplicate events
 			}
 		}
@@ -196,7 +188,7 @@ func (re *GRuleProcessor) Evaluate(ctx context.Context, event models.BaseEvent[a
 				return false, fmt.Errorf("Failed to convert payload to JSON: %v", err)
 			}
 
-			err = eventStore.SaveEvent(ctx, store.SaveEventParams{
+			err = re.eventStore.SaveEvent(ctx, database.Conn, store.SaveEventParams{
 				TenantID:  event.TenantID,
 				EventType: event.Type,
 				RuleID:    rule.RuleId,

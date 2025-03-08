@@ -1,3 +1,6 @@
+begin;
+-- Create the "app" schema if it doesn't exist
+CREATE SCHEMA IF NOT EXISTS app;
 CREATE TABLE IF NOT EXISTS processed_events (
                                                 id BIGSERIAL PRIMARY KEY,       -- Auto-incrementing primary key
                                                 tenant_id VARCHAR(255) NOT NULL,
@@ -25,4 +28,4 @@ ALTER TABLE processed_events SET (
 
 --CREATE EXTENSION IF NOT EXISTS pg_cron;
 
-
+commit ;

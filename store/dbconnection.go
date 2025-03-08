@@ -1,43 +1,39 @@
 package store
 
 import (
-	"database/sql"
-	_ "github.com/lib/pq" // PostgreSQL driver
-	"log"
+	"context"
+
+	"github.com/jackc/pgx/v5"
+	_ "github.com/jackc/pgx/v5/pgxpool"
 )
 
-// StoreDatabase struct to manage DB connection
+// Database struct to manage the DB connection
 type Database struct {
-	DB *sql.DB
+	Conn *pgx.Conn
 }
 
-// NewDatabase initializes a new database connection
+// NewDatabase initializes a new database connection using pgx.Conn
 func NewDatabase(dsn string) (*Database, error) {
-	db, err := sql.Open("postgres", dsn)
+	ctx := context.Background()
+
+	// Create a direct connection
+	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
 		return nil, err
 	}
 
 	// Check if the database is reachable
-	if err := db.Ping(); err != nil {
-		err := db.Close()
-		if err != nil {
-			return nil, err
-		}
+	if err := conn.Ping(ctx); err != nil {
+		conn.Close(ctx)
 		return nil, err
 	}
 
-	log.Println("StoreDatabase connection established")
-	return &Database{DB: db}, nil
+	return &Database{Conn: conn}, nil
 }
 
 // Close closes the database connection
 func (d *Database) Close() {
-	if d.DB != nil {
-		err := d.DB.Close()
-		if err != nil {
-			return
-		}
-		log.Println("StoreDatabase connection closed")
+	if d.Conn != nil {
+		d.Conn.Close(context.Background())
 	}
 }

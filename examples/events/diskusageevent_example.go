@@ -53,7 +53,7 @@ to generate a string that is unique to the event. This string is then used
 as the deduplication key to prevent duplicate events from being processed.
 */
 func (e *DiskUsageEvent) DeduplicationKeyValues() string {
-	return fmt.Sprintf("%d|%s", e.Payload.Usage, e.Payload.InstanceID)
+	return fmt.Sprintf("%s", e.Payload.InstanceID)
 }
 
 // Implement Evaluate function
